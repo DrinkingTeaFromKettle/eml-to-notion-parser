@@ -1,0 +1,48 @@
+services:
+  ftp:
+    image: delfer/alpine-ftp-server
+    restart: unless-stopped
+    environment:
+      - USERS=admin|pass#123
+      - ADDRESS=0.0.0.0
+    ports:
+      - 21:21
+      - 21000-21010:21000-21010
+  db:
+    image: mysql
+    restart: always
+    command: --transaction-isolation=READ-COMMITTED --log-bin=binlog --binlog-format=ROW
+    volumes:
+      - db:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_PASSWORD=nextcloud
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=nextcloud
+  nextcloud:
+    image: nextcloud
+    restart: unless-stopped
+    links:
+      - db
+    # command: su -s /bin/sh www-data -c 'chmod 744 /var/www/html/' && su -s /bin/sh www-data -c 'php occ maintenance:install' && su -s /bin/sh www-data -c 'php occ user:add --password-from-env --display-name="user" --group="users" --group="admin" user'
+    # command: su -s /bin/sh www-data -c 'php occ user:add --password-from-env --display-name="admin" --group="users" --group="admin" user'
+    environment:
+      - OC_PASS=passw!2345^
+      - MYSQL_PASSWORD=nextcloud
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=nextcloud
+      - MYSQL_HOST=db
+      - NEXTCLOUD_ADMIN_USER=admin
+      - NEXTCLOUD_ADMIN_PASSWORD=admin
+      - NEXTCLOUD_TRUSTED_DOMAINS=localhost
+    ports:
+      - "8086:80"
+    volumes:
+      - nextcloud:/var/www/html
+      
+
+volumes:
+  nextcloud:
+  db:
+
+#sudo -u www-data php occ user:add --display-name=“YourName” --group=“users” --group=“db-admins” yourname
