@@ -1,6 +1,7 @@
 services:
   ftp:
-    image: delfer/alpine-ftp-server
+    build: .
+    container_name: python-ftp
     restart: unless-stopped
     environment:
       - USERS=admin|pass#123
@@ -10,6 +11,7 @@ services:
       - 21000-21010:21000-21010
   db:
     image: mysql
+    container_name: nextcloud-db
     restart: always
     command: --transaction-isolation=READ-COMMITTED --log-bin=binlog --binlog-format=ROW
     volumes:
@@ -21,12 +23,13 @@ services:
       - MYSQL_USER=nextcloud
   nextcloud:
     image: nextcloud
+    container_name: python-nextcloud
     restart: unless-stopped
     links:
       - db
     # command: su -s /bin/sh www-data -c 'chmod 744 /var/www/html/' && su -s /bin/sh www-data -c 'php occ maintenance:install' && su -s /bin/sh www-data -c 'php occ user:add --password-from-env --display-name="user" --group="users" --group="admin" user'
     # command: su -s /bin/sh www-data -c 'php occ user:add --password-from-env --display-name="admin" --group="users" --group="admin" user'
-    environment:
+    environment: 
       - OC_PASS=passw!2345^
       - MYSQL_PASSWORD=nextcloud
       - MYSQL_DATABASE=nextcloud
@@ -44,5 +47,3 @@ services:
 volumes:
   nextcloud:
   db:
-
-#sudo -u www-data php occ user:add --display-name=“YourName” --group=“users” --group=“db-admins” yourname
