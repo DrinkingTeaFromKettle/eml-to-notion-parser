@@ -1,6 +1,4 @@
 #!/bin/sh
-
-# Define default values
 FTP_PASS=""
 NEXTCLOUD_PASS=""
 NOTION_TOKEN=""
@@ -28,11 +26,12 @@ if [ -z "$NOTION_TOKEN" ] || [ -z "$PAGE_ID" ]; then
   exit 1
 fi
 
-# Run set_env.py using Python from virtual environment
-./venv/bin/python set_env.py --ftp_pass="$FTP_PASS" --nextcloud_pass="$NEXTCLOUD_PASS" --notion_token="$NOTION_TOKEN" --page_id="$PAGE_ID" --email_db="$EMAIL_DB" --contact_db="$CONTACT_DB"
+python -m venv venv
 
-# Start Docker containers
+venv/bin/activate
+
+python set_env.py --ftp_pass="$FTP_PASS" --nextcloud_pass="$NEXTCLOUD_PASS" --notion_token="$NOTION_TOKEN" --page_id="$PAGE_ID" --email_db="$EMAIL_DB" --contact_db="$CONTACT_DB"
+
 docker compose up -d
 
-# Run main script
-./venv/bin/python main.py
+python main.py
