@@ -40,7 +40,7 @@ def job():
             print("An error occured: %s", e)
             print("Quitting")
             retry=False
-        except ftplib.all_errors as e:
+        except Exception as e:
             print("An error occured: %s", e)
             print("Retrying...")
             sleep(10)
