@@ -1,35 +1,52 @@
 import os
 from notion_client import Client
 from nextcloud import add_file_to_nextcloud
+from time import sleep
 
-notion = Client(auth=os.environ["NOTION_TOKEN"])
+
 
 def write_email_to_notion(data):
-    
+    notion = Client(auth=os.environ["NOTION_TOKEN"])
+    attachment_links = None
     if len(data["attachments"]) > 0:  
         attachment_links = add_file_to_nextcloud(data)        
-    
-    new_page = {
-        "e-mail wysyłającego": {
-                "type": "rich_text",
-                "rich_text": [
-                    {
-                        "type": "text",
-                        "text": {"content": data["from"]},
-                    },
-                ],
-            },
-        "Data otrzymania korespondencji": {"date": {
-                "start": data["date"]
-            }},
-        "Tytuł e-mail ": {"title": [{"text": {"content":data["subject"]}}]},  
-        "Załącznik":{
-            "type": "files",
-            "files": attachment_links,
-        },
-        }
+        new_page = {
+            "Sender E-mail": {
+                    "type": "rich_text",
+                    "rich_text": [
+                        {
+                            "type": "text",
+                            "text": {"content": data["from"]},
+                        },
+                    ],
+                },
+            "Date": {"date": {
+                    "start": data["date"]
+                }},
+            "E-mail Title": {"title": [{"text": {"content":data["subject"]}}]},  
+            "Attachments":{
+                "type": "url",
+                "url":  attachment_links[0]['external']['url']},
+            
+            }
+    else:
+        new_page = {
+            "Sender E-mail": {
+                    "type": "rich_text",
+                    "rich_text": [
+                        {
+                            "type": "text",
+                            "text": {"content": data["from"]},
+                        },
+                    ],
+                },
+            "Date": {"date": {
+                    "start": data["date"]
+                }},
+            "E-mail Title": {"title": [{"text": {"content":data["subject"]}}]},  
+            }
     if not isinstance(data["body"], str):
-        new_page["Treść otrzymanej korespondencji"] = {
+        new_page["Content"] = {
             "type": "rich_text",
                 "rich_text": [
                     {
@@ -42,10 +59,10 @@ def write_email_to_notion(data):
                        "type":"text",
                         "text":{"content": d},
             })
-        new_page["Treść otrzymanej korespondencji"]["rich_text"] = array
+        new_page["Content"]["rich_text"] = array
         
     else:
-        new_page["Treść otrzymanej korespondencji"] = {
+        new_page["Content"] = {
             "type": "rich_text",
                 "rich_text": [
                     {
@@ -55,62 +72,139 @@ def write_email_to_notion(data):
                 ],
             }
         
-    notion.pages.create(parent={"database_id": os.environ["DB_ID"]}, properties=new_page)
+    notion.pages.create(parent={"database_id": os.environ["EMAIL_DB_ID"]}, properties=new_page)
 
 
-def write_client_to_notion(data):
+def write_contact_to_notion(data):
+    notion = Client(auth=os.environ["NOTION_TOKEN"])
     email_exists = notion.databases.query(
         **{
-        "database_id": os.environ['CLIENT_DB'],
+        "database_id": os.environ['CONTACT_DB_ID'],
         "filter": {
-            "property": "Adres mailowy",
-            "multi_select":{
-            "contains": data["from"],
-            },
+            "property": "E-mail Address",
+                "email":{
+                    "contains": data["from"],
+                },
         },
     })
     if email_exists["results"]:
         print("Dane klienta znajdują się już w bazie.")
-    else:
-        client_exists = notion.databases.query(
-        **{
-        "database_id": os.environ['CLIENT_DB'],
+    else:    
+        new_page = {
+        "Contact Name":{
+            "title":[{
+                "text":{"content": data["name"]}
+            }] 
+        },
+        "E-mail Address": {
+                "email":  data["from"]
+            },
+        "Added automatically": {
+            "checkbox": True
+        }
+        }
+        notion.pages.create(parent={"database_id": os.environ["CONTACT_DB_ID"]}, properties=new_page)
+  
+
+def create_email_database(dbname):
+    notion = Client(auth=os.environ["NOTION_TOKEN"])
+    db = notion.search(**{
+        "query": dbname,
         "filter": {
-            "property": "slug",
-            "rich_text":{
-            "contains": "".join(data["name"].upper().split()),
+        "value": 'database',
+        "property": 'object'
+        },
+    })
+    if len(db["results"]) == 0:
+        print("Creating database "+dbname+"...")
+        db = notion.databases.create(
+        **{
+        "parent": {
+            "type": "page_id",
+            "page_id": os.environ["NOTION_PAGE_ID"],
+        },
+        "title": [
+            {
+            "type": "text",
+            "text": {
+                "content": dbname,
+                "link": None,
+            },
+            },
+        ],
+        "properties": {
+            "Sender E-mail": {
+                    "rich_text":{},
+            },
+            "Date": {
+                "date": {},
+            },
+            "E-mail Title": {
+                "title": {},
+            },
+            "Content":{
+                "rich_text":{},
+            },
+            "Attachments":{
+                "files":{}
+            }
+        },
+        })
+        #Time needed for database creation and api info update
+        sleep(20)
+        os.environ["EMAIL_DB_ID"] = db["id"]
+
+    else:
+        print("Database " +dbname+" already exists. Skipping creation...")
+        try:
+            os.environ["EMAIL_DB_ID"] = db["results"][0]["id"]
+        except:
+            print("Couldn't get "+dbname+" database id.")
+        
+def create_contacts_database(dbname):
+    notion = Client(auth=os.environ["NOTION_TOKEN"])
+    db = notion.search(**{
+        "query": dbname,
+        "filter": {
+        "value": 'database',
+        "property": 'object'
+    },})
+    if len(db["results"]) == 0:
+        print("Creating database "+dbname+"...")
+        db = notion.databases.create(
+        **{
+        "parent": {
+            "type": "page_id",
+            "page_id": os.environ["NOTION_PAGE_ID"],
+        },
+        "title": [
+            {
+            "type": "text",
+            "text": {
+                "content": dbname,
+                "link": None,
+            },
+            },
+        ],
+        "properties": {
+            "Contact Name": {
+                    "title":{},
+            },
+            "Added automatically":{
+                "checkbox":{},
+            },
+            "E-mail Address": {
+                "email": {}
             },
         },
         })
-        if client_exists["results"]:
-            multi_select = []
-            for email in client_exists["results"][0]["properties"]["Adres mailowy"]["multi_select"]:
-                multi_select.append({"name": email['name']})
-            multi_select.append({"name": data["from"]})
-            notion.pages.update(
-                **{
-                    "page_id": client_exists["results"][0]["id"],
-                    "properties":{
-                        "Adres mailowy": {
-                            "multi_select": multi_select
-                        }
-                    }
-            })
-        else:    
-            new_page = {
-            "Osoba kontaktowa":{
-            "title":[{
-                "text":{"content":data["name"]}
-            } ] 
-            },
-            "Adres mailowy": {
-                    "multi_select": [
-                        {"name": data["from"]}
-                    ]
-                },
-            "Dodane automatycznie": {
-                "checkbox": True
-            }
-            }
-            notion.pages.create(parent={"database_id": os.environ["CLIENT_DB"]}, properties=new_page)
-  
+        #Time needed for database creation and api info update
+        sleep(20)
+        os.environ["CONTACT_DB_ID"] = db["id"]
+
+    else:
+        print("Database " +dbname+" already exists. Skipping creation...")
+        try:
+            os.environ["CONTACT_DB_ID"] = db["results"][0]["id"]
+        except:
+            print("Couldn't get "+dbname+" database id.")

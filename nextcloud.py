@@ -6,12 +6,12 @@ import xmltodict
 from helpers import randomword
 
 
-def  add_file_to_nextcloud(data):
+def  add_file_to_nextcloud(attachments):
     attachment_links = []
     nc = nextcloud_client.Client(os.environ["NEXTCLOUD_HOSTNAME"])
     nc.login(os.environ["NEXTCLOUD_ADMIN_USER"], os.environ["NEXTCLOUD_ADMIN_PASSWORD"])
     file_list = nc.list(os.environ["REMOTE_FOLDER_NAME"]+'/')
-    for attachment in data["attachments"]:
+    for attachment in attachments["attachments"]:
         f = open("output/"+attachment["filename"]+"."+attachment["filetype"], "wb")
         f.write(attachment["content"])
         f.close()
@@ -34,10 +34,8 @@ def  add_file_to_nextcloud(data):
             data=propfind_optins
         )
         
-        start_time = time() * 1000
+        
         xml_dict = xmltodict.parse(r.text, dict_constructor=dict)
-        end_time = time() * 1000
-        print("Time: " + str(end_time-start_time))
         id = xml_dict['d:multistatus']['d:response']['d:propstat']['d:prop']['oc:id']
         
         attachment_links.append( 

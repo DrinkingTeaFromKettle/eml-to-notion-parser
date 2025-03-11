@@ -1,18 +1,22 @@
 services:
   ftp:
-    build: .
+    build: 
+      context: ./.docker/ftp
+      args:
+      - USER=${FTP_USER}
     container_name: python-ftp
     restart: unless-stopped
     environment:
-      - USERS=admin|pass#123
+      - USERS=${FTP_USER}|${FTP_SECRET}
       - ADDRESS=0.0.0.0
     ports:
       - 21:21
       - 21000-21010:21000-21010
+    
   db:
     image: mysql
     container_name: nextcloud-db
-    restart: always
+    restart: unless-stopped
     command: --transaction-isolation=READ-COMMITTED --log-bin=binlog --binlog-format=ROW
     volumes:
       - db:/var/lib/mysql
@@ -35,9 +39,9 @@ services:
       - MYSQL_DATABASE=nextcloud
       - MYSQL_USER=nextcloud
       - MYSQL_HOST=db
-      - NEXTCLOUD_ADMIN_USER=admin
-      - NEXTCLOUD_ADMIN_PASSWORD=admin
-      - NEXTCLOUD_TRUSTED_DOMAINS=localhost
+      - NEXTCLOUD_ADMIN_USER=${NEXTCLOUD_ADMIN_USER}
+      - NEXTCLOUD_ADMIN_PASSWORD=${NEXTCLOUD_ADMIN_PASSWORD}
+      - NEXTCLOUD_TRUSTED_DOMAINS=&{FTP_HOST}
     ports:
       - "8086:80"
     volumes:

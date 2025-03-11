@@ -32,19 +32,12 @@ def parse_eml(file):
     subject_decoded = subject[0]
     if subject[1] != None:
         subject_decoded = subject[0].decode(subject[1])
-    b = msg 
-    body = ""
-    if b.is_multipart():
-        for part in b.walk():
-            ctype = part.get_content_type()
-            cdispo = str(part.get('Content-Disposition'))
-
-            if ctype == 'text/plain' not in cdispo:
-                body = part.get_payload(decode=True)  # decode
-                break
+    body = msg.get_body(('plain',))
+    if body:
+        body = body.get_content()
     else:
-        body = b.get_payload(decode=True)
-    body = body.decode()
+         body = "Couldn't read massage body."
+             
     if len(body) < 2000:
         return {
             "subject": subject_decoded,
