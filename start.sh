@@ -30,6 +30,8 @@ python -m venv venv
 
 venv/bin/activate
 
+pip install -r requirements.txt
+
 python set_env.py --ftp_pass="$FTP_PASS" --nextcloud_pass="$NEXTCLOUD_PASS" --notion_token="$NOTION_TOKEN" --page_id="$PAGE_ID" --email_db="$EMAIL_DB" --contact_db="$CONTACT_DB"
 
 docker compose up -d
