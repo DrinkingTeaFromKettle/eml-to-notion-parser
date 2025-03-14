@@ -7,9 +7,9 @@ from time import sleep
 
 def write_email_to_notion(data):
     notion = Client(auth=os.environ["NOTION_TOKEN"])
-    attachment_links = None
+    attachment_links = ""
     if len(data["attachments"]) > 0:  
-        attachment_links = add_file_to_nextcloud(data)        
+        attachment_links = add_file_to_nextcloud(data)
         new_page = {
             "Sender E-mail": {
                     "type": "rich_text",
@@ -25,8 +25,13 @@ def write_email_to_notion(data):
                 }},
             "E-mail Title": {"title": [{"text": {"content":data["subject"]}}]},  
             "Attachments":{
-                "type": "url",
-                "url":  attachment_links[0]['external']['url']},
+                "type": "rich_text",
+                "rich_text": [{
+                    "type" : "text",
+                    "text" : {"content" : attachment_links } 
+                }
+                    ]
+                },
             
             }
     else:
@@ -146,7 +151,7 @@ def create_email_database(dbname):
                 "rich_text":{},
             },
             "Attachments":{
-                "files":{}
+                "rich_text":{}
             }
         },
         })

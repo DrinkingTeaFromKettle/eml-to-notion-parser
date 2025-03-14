@@ -7,13 +7,14 @@ from helpers import randomword
 
 
 def  add_file_to_nextcloud(attachments):
-    attachment_links = []
+    attachment_links = ""
     nc = nextcloud_client.Client(os.environ["NEXTCLOUD_HOSTNAME"])
     nc.login(os.environ["NEXTCLOUD_ADMIN_USER"], os.environ["NEXTCLOUD_ADMIN_PASSWORD"])
-    if os.environ["REMOTE_FOLDER_NAME"] not in nc.list("/") :
+    if f"/os.environ['REMOTE_FOLDER_NAME']/" not in nc.list("/") :
         nc.mkdir(os.environ["REMOTE_FOLDER_NAME"])
     file_list = nc.list(os.environ["REMOTE_FOLDER_NAME"]+'/')
     for attachment in attachments["attachments"]:
+        print(attachment)
         f = open("output/"+attachment["filename"]+"."+attachment["filetype"], "wb")
         f.write(attachment["content"])
         f.close()
@@ -40,14 +41,6 @@ def  add_file_to_nextcloud(attachments):
         xml_dict = xmltodict.parse(r.text, dict_constructor=dict)
         id = xml_dict['d:multistatus']['d:response']['d:propstat']['d:prop']['oc:id']
         
-        attachment_links.append( 
-             {
-               "name": remote_file_name,
-               "type": "external",
-               "external": {
-                   "url": os.environ["NEXTCLOUD_HOSTNAME"]+'/f/'+id,
-               }
-             }
-           )
+        attachment_links += os.environ["NEXTCLOUD_HOSTNAME"]+'/f/'+id + " , "
         os.remove("output/"+attachment["filename"]+"."+attachment["filetype"])
-        return attachment_links
+    return attachment_links
