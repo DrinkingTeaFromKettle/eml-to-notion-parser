@@ -10,8 +10,9 @@ def  add_file_to_nextcloud(attachments):
     attachment_links = ""
     nc = nextcloud_client.Client(os.environ["NEXTCLOUD_HOSTNAME"])
     nc.login(os.environ["NEXTCLOUD_ADMIN_USER"], os.environ["NEXTCLOUD_ADMIN_PASSWORD"])
-    files_xd = map(lambda f: f.path, nc.list("/"))
-    check = f"/{os.environ["REMOTE_FOLDER_NAME"]}/" not in list(files_xd)
+    files_nc = map(lambda f: f.path, nc.list("/"))
+    remote_folder_name = os.environ["REMOTE_FOLDER_NAME"]
+    check = f"/{remote_folder_name}/" not in list(files_nc)
     if check :
         nc.mkdir(os.environ["REMOTE_FOLDER_NAME"])
     file_list = nc.list(os.environ["REMOTE_FOLDER_NAME"]+'/')
