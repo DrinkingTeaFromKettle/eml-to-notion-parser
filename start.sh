@@ -26,9 +26,9 @@ if [ -z "$NOTION_TOKEN" ] || [ -z "$PAGE_ID" ]; then
   exit 1
 fi
 
-python -m venv venv
+python3 -m venv venv
 
-venv/bin/activate
+. venv/bin/activate
 
 pip install -r requirements.txt
 
